@@ -1,0 +1,87 @@
+{
+  "Drums Region": {
+    "scope": "python",
+    "prefix": "drums",
+    "body": [
+      "# region Drums",
+      "drums = drum_tensor((16, 4, 16), duration=1, kit=0)",
+      "drums[0, 0, 0, 1] = 1",
+      "Clip(drums).rgate(1).sparsify().quantize(1).track(4).show().render(live)",
+      "# endregion"
+    ],
+    "description": "Drums tensor region"
+  },
+  "Noise Region": {
+    "scope": "python",
+    "prefix": "noise",
+    "body": [
+      "# region Noise",
+      "noise = simple_tensor((2, 4, 16), pitch=36)",
+      "noise[0, :, 0, 1] = 1",
+      "Clip(noise).track(5).speed(1).render(live)",
+      "# endregion"
+    ],
+    "description": "Noise tensor region"
+  },
+  "Sampler Region": {
+    "scope": "python",
+    "prefix": "sampler",
+    "body": [
+      "# region Sampler",
+      "sounds = {\"BEEP1\": 48, \"BEEP2\": 49}",
+      "sampler = simple_tensor((2, 4, 16), pitch=sounds[\"BEEP1\"])",
+      "sampler[0, :, 0, 1] = 1",
+      "Clip(sampler).track(8).speed(1).show().render(live)",
+      "# endregion"
+    ],
+    "description": "Sampler tensor region"
+  },
+  "Sub Region": {
+    "scope": "python",
+    "prefix": "sub",
+    "body": [
+      "# region Sub",
+      "sub = simple_tensor([2, 4, 16])",
+      "sub[0, :, 0, 1] = 1",
+      "Clip(sub).track(6).linear_pitch(12/7, ROOT-2*12).project_pitch(SCALE).speed(1).show().render(live)",
+      "# endregion"
+    ],
+    "description": "Sub tensor region"
+  },
+  "Key Region": {
+    "scope": "python",
+    "prefix": "key",
+    "body": [
+      "# region Key",
+      "key = simple_tensor((4, 2, 16))",
+      "key[0, :, 0, 1] = 1",
+      "Clip(key).track(7).linear_pitch(12/7, ROOT).project_pitch(SCALE).show().speed(1).render(live)",
+      "# endregion"
+    ],
+    "description": "Key tensor region"
+  },
+  "Synth1 Region": {
+    "scope": "python",
+    "prefix": "synth1",
+    "body": [
+      "# region Synth1",
+      "synth1 = simple_tensor((4, 2, 16), duration=16)",
+      "synth1[0, :, 0, 1] = 1",
+      "Clip(synth1).track(9).linear_pitch(12/7, ROOT).project_pitch(SCALE).show().speed(1/4).render(live)",
+      "# endregion"
+    ],
+    "description": "Synth1 tensor region"
+  },
+  "Synth2 Region": {
+    "scope": "python",
+    "prefix": "synth2",
+    "body": [
+      "# region Synth2",
+      "synth2 = simple_tensor((4, 2, 16), duration=16)",
+      "synth2[0, :, 0, 1] = 1",
+      "Clip(synth2).track(10).linear_pitch(12/7, ROOT).project_pitch(SCALE).show().speed(1/4).render(live)",
+      "# endregion"
+    ],
+    "description": "Synth2 tensor region"
+  }
+}
