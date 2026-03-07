@@ -140,7 +140,7 @@ The `examples/` directory contains complete compositions written for live perfor
 ## Origin
 
 Developed at [ENIB](https://www.enib.fr/) — Ecole Nationale d'Ingenieurs de Brest.
-Built by a signal processing researcher who cannot read a score.
+Built by a signal processing researcher who cannot read a music score.
 
 _Vincent Choqueuse — Associate Professor, ENIB_
 _PhD/HDR Signal Processing — Lab-STICC CNRS UMR 6285_
