@@ -4,6 +4,8 @@
 
 Tensor-based musical composition with NumPy.
 
+**Documentation:** https://vincentchoqueuse.github.io/tenseur/
+
 Tenseur is a Python library where music is composed in a **latent space of floats** — there are no notes, no chords, no rhythms until the moment of projection onto a tuning system. Composition is tensor manipulation. NumPy indexing is musical notation.
 
 ## Install
