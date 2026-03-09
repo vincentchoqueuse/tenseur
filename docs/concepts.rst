@@ -1,6 +1,53 @@
 Concepts
 ========
 
+From Score to Tensor
+--------------------
+
+Traditional music production is **event-based**. The piano roll is a grid
+where notes are placed one by one. Copy-paste creates repetition. Manual
+editing creates variation. The workflow scales linearly with complexity:
+more notes, more clicks.
+
+Tenseur is **structure-based**. A composition is a 4D NumPy array of shape
+``(V, B, S, 4)`` — voices, bars, steps, and four properties per note:
+``[pitch, velocity, start, duration]``. The tensor is the score, the MIDI,
+and the piano roll simultaneously.
+
+The difference is not cosmetic. It changes what operations are natural:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Piano roll
+     - Tensor
+   * - Arpeggio
+     - Place notes one by one
+     - ``np.arange(16) % 3``
+   * - Canon
+     - Duplicate, shift, adjust
+     - ``np.roll(M, 2, axis=1)``
+   * - Harmonic progression
+     - Draw each chord
+     - ``np.sin(w) + 0.5*np.sin(2*w)``
+   * - Stochastic variation
+     - Not possible
+     - ``bernoulli((16, 4, 16), 0.3)``
+   * - Repetition with variation
+     - Copy-paste, edit
+     - Broadcasting
+
+.. code-block:: python
+
+   # A complete arpegiated synth part in 4 lines
+   synth = simple_tensor((3, 4, 16), duration=8)
+   synth[..., 0] = M[..., None]                          # harmonic content
+   synth[..., 1] = (gate == np.arange(3)[:, None, None]) # arpeggio pattern
+   Clip(synth).linear_pitch(12/7, ROOT).project_pitch(SCALE).render(live)
+
+The composer works at the level of structure, not events.
+
 Latent Space Composition
 ------------------------
 
@@ -57,6 +104,33 @@ Rhythmic patterns are generated geometrically, not programmed step by step:
 
 ``np.roll`` on the bar axis produces exact canonic structures — rigorous counterpoint
 in one NumPy call.
+
+Arpeggios via Modular Indexing
+------------------------------
+
+Arpeggios emerge naturally from modular arithmetic on the step axis.
+A gate vector distributes voices across time:
+
+.. code-block:: python
+
+   gate = np.arange(16) % 3  # [0, 1, 2, 0, 1, 2, ...]
+
+   synth = simple_tensor((3, 4, 16), duration=8)
+   synth[..., 0] = M[..., None]
+   synth[0, :, :, 1] = (gate == 0)
+   synth[1, :, :, 1] = (gate == 1)
+   synth[2, :, :, 1] = (gate == 2)
+
+Voice 0 plays at steps 0, 3, 6, 9… — voice 1 at 1, 4, 7, 10… — voice 2 at 2, 5, 8, 11…
+The chord defined in ``M`` is spread across time as an arpeggio.
+
+Changing the modulus changes the arpeggio speed. Compound modular chains
+create polyrhythmic arpeggios:
+
+.. code-block:: python
+
+   gate = np.arange(16) % 5          # cycle of 5
+   gate = np.arange(16) % 13 % 11   # nested modulo — irregular groupings
 
 Stochastic Primitives
 ---------------------

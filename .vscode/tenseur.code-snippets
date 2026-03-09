@@ -6,7 +6,7 @@
       "# region Drums",
       "drums = drum_tensor((16, 4, 16), duration=1, kit=0)",
       "drums[0, 0, 0, 1] = 1",
-      "Clip(drums).rgate(1).sparsify().quantize(1).track(4).show().render(live)",
+      "Clip(drums).rgate(1).sparsify([0, 1, 2, 3, 4]).quantize(1).track(4).show().render(live)",
       "# endregion"
     ],
     "description": "Drums tensor region"
