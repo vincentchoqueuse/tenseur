@@ -16,12 +16,12 @@ def randn(*shape: int) -> np.ndarray:
     return _rng.standard_normal(shape)
 
 
-def normal(size: tuple[int, ...], scale: float = 1.0) -> np.ndarray:
+def normal(size: tuple[int, ...] = (16, 4, 16), scale: float = 1.0) -> np.ndarray:
     """Draw normal noise with given shape and scale. Uses the global RNG."""
     return scale * _rng.standard_normal(size)
 
 
-def bernoulli(size: tuple[int, ...], prob: float = 0.5) -> np.ndarray:
+def bernoulli(size: tuple[int, ...] = (16, 4, 16), prob: float = 0.5) -> np.ndarray:
     """Draw 0/1 values with given probability. Uses the global RNG."""
     return (_rng.random(size) < prob).astype(np.float64)
 

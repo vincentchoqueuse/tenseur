@@ -134,7 +134,7 @@ def scatter(pulses: int, steps: int | tuple[int, ...]) -> np.ndarray:
 
 
 def drum_tensor(
-    size: tuple[int, int, int] | list[int] = (16, 1, 16),
+    size: tuple[int, int, int] | list[int] = (16, 4, 16),
     pitch: float = 4.0,
     velocity: float = 0.0,
     duration: float = 0.5,
@@ -176,5 +176,166 @@ def drum_tensor(
     step_idx = np.arange(S, dtype=np.float64)
     start_times = bar_idx.reshape(B, 1) * steps_per_bar + step_idx.reshape(1, S)
     tensor[..., START] = start_times
+
+    return tensor
+
+
+def rdrum_tensor(
+    size: tuple[int, int, int] | list[int] = (16, 4, 16),
+    prob: float = 0.05,
+    duration: float = 1.0,
+    kit: float = 0.0,
+    steps_per_bar: int | None = None,
+) -> Tensor:
+    """Create a drum tensor with random velocity activation.
+
+    Shortcut for::
+
+        drums = drum_tensor(size, duration=duration, kit=kit)
+        drums[..., VEL] = bernoulli(size, prob=prob)
+
+    Args:
+        size: (voices, bars, steps).
+        prob: Probability of each note being active.
+        duration: Note duration in steps.
+        kit: Kit offset for drum_tensor.
+        steps_per_bar: Steps per bar for start-time computation.
+
+    Returns:
+        Tensor of shape (V, B, S, 4) with stochastic velocity.
+    """
+    from tenseur.utils.random import bernoulli
+    tensor = drum_tensor(size, duration=duration, kit=kit, steps_per_bar=steps_per_bar)
+    tensor[..., VEL] = bernoulli(size, prob=prob)
+    return tensor
+
+
+def random_tensor(
+    size: TensorSize = (1, 16, 16),
+    prob: float = 0.1,
+    scale: float = 3.0,
+    duration: float = 16.0,
+    dur_scale: float = 5.0,
+    walk: bool = True,
+    range: float | None = 7.0,
+    root: bool = True,
+    steps_per_bar: int | None = None,
+) -> Tensor:
+    """Create a tensor with random pitch and stochastic activation.
+
+    Generates melodic material from noise. When ``walk=True``, pitches
+    follow a Brownian motion (cumulative sum) for smooth contours.
+    When ``range`` is set, pitches are wrapped with modulo to stay
+    within an interval.
+
+    Args:
+        size: Tensor size (V, B, S) or shortcuts accepted by simple_tensor.
+        prob: Probability of each note being active (bernoulli).
+        scale: Standard deviation of the pitch noise.
+        duration: Note duration in steps.
+        dur_scale: Standard deviation added to duration (0 = fixed duration).
+        walk: If True, apply cumsum for Brownian motion melody.
+            If False, use raw Gaussian noise.
+        range: If set, wrap pitches with modulo to stay in [0, range).
+            Set to None for unbounded pitch.
+        root: If True, force the first note of each voice to pitch 0
+            (root) so the walk starts from a known point.
+        steps_per_bar: Steps per bar for start-time computation.
+
+    Returns:
+        Tensor of shape (V, B, S, 4).
+
+    Example::
+
+        # Brownian piano, sparse, wrapped to 7 scale degrees
+        noise = random_tensor(prob=0.1, scale=3, walk=True, range=7)
+        Clip(noise).linear_pitch(12/7, ROOT).project_pitch(SCALE).render(live)
+
+        # Dense white noise texture, no walk
+        texture = random_tensor(prob=0.5, scale=5, walk=False, range=None)
+    """
+    from tenseur.utils.random import bernoulli, normal
+
+    tensor = simple_tensor(size, duration=duration, steps_per_bar=steps_per_bar)
+    V, B, S, _ = tensor.shape
+
+    # Pitch generation
+    pitch = scale * normal((V, B * S,))
+    if walk:
+        pitch = np.cumsum(pitch, axis=-1)
+    pitch = pitch.reshape(V, B, S)
+    if root:
+        pitch -= pitch[:, 0:1, 0:1]
+    if range is not None:
+        pitch = pitch % range
+
+    tensor[..., PITCH] = pitch
+
+    # Duration variation
+    if dur_scale > 0:
+        tensor[..., DUR] = duration + dur_scale * normal((V, B, S))
+
+    # Stochastic activation
+    tensor[..., VEL] = bernoulli((V, B, S), prob=prob)
+
+    return tensor
+
+
+def drum_pattern(
+    pattern: dict[int, list[int] | np.ndarray],
+    bars: int = 4,
+    steps: int = 16,
+    voices: int | None = None,
+    duration: float = 1.0,
+    kit: float = 0.0,
+    steps_per_bar: int | None = None,
+) -> Tensor:
+    """Create a drum tensor from a voice→steps mapping.
+
+    Quick drum programming for live coding. Each key is a voice index,
+    each value defines which steps are active (list of indices, slice-like
+    string, or a boolean/float array).
+
+    Args:
+        pattern: {voice: steps} mapping. Values can be:
+            - list of ints: step indices, e.g. [0, 4, 8, 12]
+            - np.ndarray: velocity array of length ``steps``
+              (boolean or float, broadcast over bars)
+        bars: Number of bars.
+        steps: Steps per bar.
+        voices: Total voices (default: max voice index + 1).
+        duration: Note duration in steps.
+        kit: Kit offset for drum_tensor.
+        steps_per_bar: Steps per bar for start-time computation.
+
+    Returns:
+        Tensor of shape (V, B, S, 4).
+
+    Example::
+
+        drums = drum_pattern({
+            0: [0, 10],            # kick
+            2: [4, 12],            # snare
+            4: euclidean(7, 16),   # hat
+            8: [5, 8, 11, 14],    # shaker
+        })
+    """
+    if voices is None:
+        voices = max(pattern.keys()) + 1
+
+    tensor = drum_tensor(
+        (voices, bars, steps),
+        duration=duration,
+        kit=kit,
+        steps_per_bar=steps_per_bar,
+    )
+
+    for voice, hits in pattern.items():
+        if isinstance(hits, list):
+            tensor[voice, :, hits, VEL] = 1.0
+        elif isinstance(hits, np.ndarray):
+            tensor[voice, :, :, VEL] = hits
+        else:
+            tensor[voice, :, :, VEL] = hits
 
     return tensor

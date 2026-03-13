@@ -5,9 +5,9 @@ __version__ = "0.1.0"
 from tenseur.backends.ableton import AbletonOSCClient, Live
 from tenseur.core.clip import Clip
 from tenseur.core.constants import DUR, PITCH, START, VEL
-from tenseur.helpers.create import drum_tensor, euclidean, scatter, simple_tensor
+from tenseur.helpers.create import drum_pattern, drum_tensor, euclidean, random_tensor, rdrum_tensor, scatter, simple_tensor
 from tenseur.helpers.scales import generate_scale
-from tenseur.helpers.transforms import quantize, quantize_pitch, sine, swing, upsample
+from tenseur.helpers.transforms import crossfade, quantize, quantize_pitch, sine, swing, upsample
 from tenseur.utils.midi_utils import midi_to_note_name, note_name_to_midi
 from tenseur.utils.random import bernoulli, normal, randn, seed, shuffle
 
@@ -19,6 +19,7 @@ __all__ = [
     "Clip",
     "simple_tensor",
     "drum_tensor",
+    "drum_pattern",
     "euclidean",
     "scatter",
     "sine",

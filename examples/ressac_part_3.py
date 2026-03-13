@@ -1,9 +1,9 @@
 import numpy as np
-from tenseur import Clip, Live, seed, drum_tensor, normal, bernoulli, euclidean, simple_tensor, upsample, scatter, generate_scale
+from tenseur import Clip, Live, seed, random_tensor, drum_tensor, normal, bernoulli, euclidean, simple_tensor, upsample, scatter, generate_scale
 from tracks import *
 
 # region scene parameters 
-CLIP = 2
+CLIP = 3
 ROOT = 52
 SEED = 42
 SCALE = generate_scale(7, root=ROOT, offset=-1/7)
@@ -13,54 +13,37 @@ live = Live(index=CLIP)
 # endregion
 
 speed = 1/4
-M = np.array([
-    [0, -1, -1, -1],
-    [2, 2, 1, 1],
-    [4, 4, 4, 3],
-    [7, 6, 6, 6]
-    ]
-)
 
-M = np.array([
-    [0, -1, -1, -1],
-    [2, 2, 1, 1],
-    [4, 4, 4, 3],
-    ]
-)
 
-M[1, :] += 7
+# region Drums
+drums = drum_tensor((16, 4, 16), duration=1, kit=3)
+drums[0, :, :9:3, 1] = 1  #kick
+drums[2, :, 12, 1] = 1  #snare
+drums[4, :, :, 1] = 1
+#drums[..., 1] = bernoulli(prob=0.3)
+drums[..., 1] *= bernoulli(prob=0.2)
+Clip(drums).sparsify([0, 1, 2, 3, 4]).quantize(1).track(4).show().render(live)
+# endregion
 
-V = M[0, :]
 
 # region Sub
-sub = simple_tensor([1, 4, 16], duration=4)
-sub[..., 2, 0] = V
-sub[..., 2, 1] = 1
-Clip(sub).track(6).linear_pitch(12/7, ROOT-2*12).project_pitch(SCALE).speed(speed).show().render(live)
+sub = simple_tensor([2, 4, 16], duration=4)
+sub[0, 3, 12, 1] = 1
+Clip(sub).track(6).linear_pitch(12/7, ROOT-2*12).project_pitch(SCALE).speed(1).show().render(live)
 # endregion
 
-# region Synth1
-synth1 = simple_tensor((3, 4, 16), duration=8)
-synth1[:, :, 0, 1] = 1
-synth1[..., 0] = M[:, :, None]
-Clip(synth1).track(9).linear_pitch(12/7, ROOT-0*12).project_pitch(SCALE).show().speed(speed).render(live)
+# region Reese
+V = [0, 0, -2, -1]  #pitch
+reese = simple_tensor((4, 4, 16), duration=36)
+reese[0, :, 0, 0] = V
+reese[0, [0, 2, 3], 0, 1] = 1
+Clip(reese).track(7).linear_pitch(12/7, ROOT+0*12).project_pitch(SCALE).speed(1/2).show().render(live)
 # endregion
 
-# region Synth2
-synth2 = simple_tensor((3, 4, 16), duration=8)
-synth2[..., 0, 1] = 1
-synth2[..., 0, 0] = M
-Clip(synth2).track(10).linear_pitch(12/7, ROOT+12).project_pitch(SCALE).show().speed(speed).render(live)
+# region Piano
+piano = random_tensor((3, 16, 16), prob=0.1, scale=3, dur_scale=3, range=14)
+Clip(piano).track(9).humanize().linear_pitch(12/7, ROOT+1*12).project_pitch(SCALE).speed(1/2).show().render(live)
 # endregion
 
-# region Synth2
-gate = np.arange(8)%3
 
-synth2 = simple_tensor((3, 4, 8), duration=8)
-synth2[..., :, 0] = 1
-synth2[..., 0] = M[..., None]
-synth2[0,: , :, 1] = (gate==0)
-synth2[1,: , :, 1] = (gate==1)
-synth2[2,: , :, 1] = (gate==2)
-Clip(synth2).track(11).linear_pitch(12/7, ROOT+0*12).project_pitch(SCALE).show().speed(speed).render(live)
-# endregion
+live.stop()

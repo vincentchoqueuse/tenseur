@@ -3,6 +3,7 @@
 import numpy as np
 
 from tenseur.core.constants import DUR, PITCH, START, VEL
+from tenseur.utils.random import bernoulli as _bernoulli
 from tenseur.core.types import PitchSet, Tensor
 
 
@@ -113,5 +114,23 @@ def upsample(tensor: Tensor, factor: int = 2) -> Tensor:
     steps = np.arange(S_new, dtype=np.float64).reshape(1, 1, S_new)
     out[..., START] = bars * spb_new + steps
     return out
+
+
+def crossfade(a: Tensor, b: Tensor, prob: float = 0.5) -> Tensor:
+    """Pick from tensor a or b at each step based on probability.
+
+    At each (v, b, s) position, all 4 properties come from either a or b.
+    Uses the global RNG for reproducibility.
+
+    Args:
+        a: First tensor of shape (V, B, S, 4).
+        b: Second tensor of shape (V, B, S, 4) — must match a's shape.
+        prob: Probability of picking from b (0 = all a, 1 = all b).
+
+    Returns:
+        New tensor mixing a and b step-wise.
+    """
+    mask = _bernoulli(a.shape[:3], prob=prob)
+    return np.where(mask[..., None], b, a)
 
 
